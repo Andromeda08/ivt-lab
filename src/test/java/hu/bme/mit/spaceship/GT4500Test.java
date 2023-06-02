@@ -53,13 +53,16 @@ public class GT4500Test {
   @Test
   public void fireTorpedo_All_Fail()
   {
+    when(torpedoStore1.isEmpty()).thenReturn(true);
+    when(torpedoStore2.isEmpty()).thenReturn(true);
+
     when(torpedoStore1.fire(1)).thenReturn(false);
     when(torpedoStore2.fire(1)).thenReturn(false);
 
     assertFalse(ship.fireTorpedo(FiringMode.ALL));
 
-    verify(torpedoStore1, times(1)).fire(1);
-    verify(torpedoStore2, times(1)).fire(1);
+    verify(torpedoStore1, times(0)).fire(1);
+    verify(torpedoStore2, times(0)).fire(1);
   }
 
   @Test
@@ -68,7 +71,7 @@ public class GT4500Test {
     when(torpedoStore1.isEmpty()).thenReturn(true);
     when(torpedoStore1.fire(1)).thenReturn(false);
 
-    when(torpedoStore2.fire(1)).thenReturn(true);
+    when(torpedoStore2.isEmpty()).thenReturn(false);
     when(torpedoStore2.fire(1)).thenReturn(true);
 
     assertTrue(ship.fireTorpedo(FiringMode.SINGLE));
@@ -79,17 +82,15 @@ public class GT4500Test {
   @Test
   public void fireTorpedo_Secondary_Empty()
   {
+    when(torpedoStore1.isEmpty()).thenReturn(false);
     when(torpedoStore1.fire(1)).thenReturn(true);
+
+    when(torpedoStore2.isEmpty()).thenReturn(true);
     when(torpedoStore2.fire(1)).thenReturn(false);
 
-    var fire1 = ship.fireTorpedo(FiringMode.SINGLE);
-    var fire2 = ship.fireTorpedo(FiringMode.SINGLE);
-
-    assertTrue(fire1);
-    assertFalse(fire2);
+    assertTrue(ship.fireTorpedo(FiringMode.SINGLE));
 
     verify(torpedoStore1, times(1)).fire(1);
-    verify(torpedoStore2, times(1)).fire(1);
   }
 
   @Test
@@ -99,6 +100,23 @@ public class GT4500Test {
     when(torpedoStore2.isEmpty()).thenReturn(true);
 
     when(torpedoStore1.fire(1)).thenReturn(true);
+    when(torpedoStore2.fire(1)).thenReturn(false);
+
+    for (var i = 0; i < 3; i++) {
+      var result = ship.fireTorpedo(FiringMode.SINGLE);
+      assertTrue(result);
+    }
+
+    verify(torpedoStore1, times(3)).fire(1);
+  }
+
+  @Test
+  public void fireTorpedo_Primary_Empty_Secondary_Repeat()
+  {
+    when(torpedoStore1.isEmpty()).thenReturn(true);
+    when(torpedoStore2.isEmpty()).thenReturn(false);
+
+    when(torpedoStore1.fire(1)).thenReturn(false);
     when(torpedoStore2.fire(1)).thenReturn(true);
 
     for (var i = 0; i < 2; i++) {
@@ -106,7 +124,88 @@ public class GT4500Test {
       assertTrue(result);
     }
 
-    verify(torpedoStore1, times(2)).fire(1);
+    verify(torpedoStore2, times(2)).fire(1);
   }
 
+  @Test
+  public void fireTorpedo_Single_Both_Success()
+  {
+    when(torpedoStore1.isEmpty()).thenReturn(false);
+    when(torpedoStore2.isEmpty()).thenReturn(false);
+
+    when(torpedoStore1.fire(1)).thenReturn(true);
+    when(torpedoStore2.fire(1)).thenReturn(true);
+
+    for (var i = 0; i < 2; i++) {
+      var result = ship.fireTorpedo(FiringMode.SINGLE);
+      assertTrue(result);
+    }
+
+    verify(torpedoStore1, times(1)).fire(1);
+    verify(torpedoStore2, times(1)).fire(1);
+  }
+
+  @Test
+  public void fireTorpedo_Primary_Once_Both_Empty()
+  {
+    when(torpedoStore2.isEmpty()).thenReturn(true);
+    when(torpedoStore2.fire(1)).thenReturn(false);
+
+    when(torpedoStore1.isEmpty()).thenReturn(false);
+    when(torpedoStore1.fire(1)).thenReturn(true);
+
+    var fireFirst = ship.fireTorpedo(FiringMode.SINGLE);
+    assertTrue(fireFirst);
+
+    when(torpedoStore1.isEmpty()).thenReturn(true);
+    when(torpedoStore1.fire(1)).thenReturn(false);
+
+    for (var i = 0; i < 2; i++) {
+      var fire = ship.fireTorpedo(FiringMode.SINGLE);
+      assertFalse(fire);
+    }
+
+    verify(torpedoStore1, times(1)).fire(1);
+  }
+
+  @Test
+  public void fireTorpedo_Secondary_Once_Both_Empty()
+  {
+    when(torpedoStore1.isEmpty()).thenReturn(true);
+    when(torpedoStore1.fire(1)).thenReturn(false);
+
+    when(torpedoStore2.isEmpty()).thenReturn(false);
+    when(torpedoStore2.fire(1)).thenReturn(true);
+
+    var fireFirst = ship.fireTorpedo(FiringMode.SINGLE);
+    assertTrue(fireFirst);
+
+    when(torpedoStore2.isEmpty()).thenReturn(true);
+    when(torpedoStore2.fire(1)).thenReturn(false);
+
+    for (var i = 0; i < 2; i++) {
+      var fire = ship.fireTorpedo(FiringMode.SINGLE);
+      assertFalse(fire);
+    }
+
+    verify(torpedoStore2, times(1)).fire(1);
+  }
+
+  @Test
+  public void fireTorpedo_Mode_Default() {
+    var result = ship.fireTorpedo(FiringMode.SPLIT);
+    assertFalse(result);
+  }
+
+  @Test
+  public void fireLaser_All() {
+    var result = ship.fireLaser(FiringMode.ALL);
+    assertFalse(result);
+  }
+
+  @Test
+  public void fireLaser_Single() {
+    var result = ship.fireLaser(FiringMode.SINGLE);
+    assertFalse(result);
+  }
 }
